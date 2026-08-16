@@ -90,6 +90,62 @@ python nightshift_agent.py --watch      # or --once for a single sweep
 
 You'll watch it heal four incidents and page a human for the fifth.
 
+## Run it IN the cluster (hybrid, $0) — `deploy/`
+
+The laptop version above runs the agent as a host process. You can also run it as a
+real **in-cluster workload**, which is how you'd actually deploy auto-remediation —
+and it makes the guard-rail stronger.
+
+```
+Pod: nightshift-agent  (ServiceAccount: nightshift-agent, RBAC-scoped)
+  ├─ kubectl via the pod's ServiceAccount token   (no kubeconfig, no --context)
+  ├─ polls Alertmanager over the cluster network  (no port-forward)
+  └─ POST prompt ─► Service llm-bridge ─► host llm_bridge.py ─► claude ($0)
+```
+
+**RBAC becomes a second, harder guard-rail.** The code allow-list decides what the
+agent *tries*; RBAC (`deploy/10-rbac.yaml`) decides what the API server will *let it
+do*. The ServiceAccount can `patch` Deployments and `delete` Pods — and nothing else.
+It has **no permission** to touch secrets, PVCs, namespaces, or delete a Deployment,
+so even a bypassed code guard-rail can't become a catastrophe:
+
+```
+$ kubectl auth can-i patch deployments   --as=system:serviceaccount:default:nightshift-agent   # yes
+$ kubectl auth can-i delete pvc          --as=system:serviceaccount:default:nightshift-agent   # no
+$ kubectl auth can-i get secrets         --as=system:serviceaccount:default:nightshift-agent   # no
+$ kubectl auth can-i delete deployments  --as=system:serviceaccount:default:nightshift-agent   # no
+```
+
+**The one piece that isn't in-cluster is the AI brain.** The agent runs `Claude` on a
+personal subscription (the reason it's $0), and that CLI lives on your machine — a pod
+can't use it. So `deploy/llm_bridge.py` runs on the host and the pod reaches it through
+a `Service` + `Endpoints` (`deploy/00-llm-bridge-service.yaml`) pointing at the host.
+**On a real cluster you'd delete the bridge and give the pod an Anthropic API key in a
+Secret instead** (self-contained, but it bills per token).
+
+```bash
+# 0) host: run the LLM bridge (wraps your claude CLI)
+python deploy/llm_bridge.py     # listens on :8799
+
+# 1) point the bridge Service at your host IP, then apply it
+#    (Endpoints IP = the host's address reachable from the cluster;
+#     on Docker Desktop / WSL that's your host's LAN/WSL IP)
+kubectl apply -f deploy/00-llm-bridge-service.yaml
+
+# 2) build the agent image and load it into kind
+docker build -t nightshift-agent:demo -f deploy/Dockerfile .   # or: podman build ...
+kind load docker-image nightshift-agent:demo --name nightshift
+
+# 3) deploy the agent + its RBAC, then watch it work
+kubectl apply -f deploy/10-rbac.yaml -f deploy/20-deployment.yaml
+kubectl apply -f scenarios/                     # break things
+kubectl logs -f deploy/nightshift-agent         # watch it heal 4, escalate 1
+```
+
+`deploy/` contents: `llm_bridge.py` (host bridge), `00-llm-bridge-service.yaml`,
+`10-rbac.yaml` (ServiceAccount + least-privilege Role), `20-deployment.yaml`,
+`Dockerfile`, `entrypoint.sh` (builds an in-cluster kubeconfig from the SA token).
+
 ---
 Part of the **DevOps Autopilot** series: an AI takes a real engineering seat — reviewer,
 test-writer, attacker, and now on-call — and we stay honest about what it gets right and

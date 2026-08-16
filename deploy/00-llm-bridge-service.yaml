@@ -1,0 +1,34 @@
+# Exposes the host-side LLM bridge (the Claude subscription CLI on the laptop) to
+# the cluster as a stable Service name. The agent pod calls http://llm-bridge:8799
+# instead of a volatile host IP. This is the ONE piece that isn't in-cluster -- it
+# is the $0 subscription bridge. On a real cluster you'd drop this and use an
+# Anthropic API key in a Secret instead.
+#
+# NOTE: the Endpoints IP is the Windows host's address on the WSL interface
+# (`Get-NetIPAddress -InterfaceAlias '*WSL*'`). Update it if the host IP changes.
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-bridge
+  namespace: default
+  labels: { app: llm-bridge }
+spec:
+  ports:
+    - name: http
+      port: 8799
+      targetPort: 8799
+      protocol: TCP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: llm-bridge
+  namespace: default
+  labels: { app: llm-bridge }
+subsets:
+  - addresses:
+      - ip: 172.18.224.1        # Windows host on the WSL vEthernet
+    ports:
+      - name: http
+        port: 8799
+        protocol: TCP

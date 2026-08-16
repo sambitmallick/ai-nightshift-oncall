@@ -29,8 +29,9 @@ import sys
 import time
 import urllib.request
 
-KCTX = os.environ.get("KCTX", "kind-nightshift")
-AM = os.environ.get("AM_URL", "http://localhost:9093")   # alertmanager (port-forwarded)
+KCTX = os.environ.get("KCTX", "kind-nightshift")  # empty => in-cluster kubectl
+AM = os.environ.get("AM_URL", "http://localhost:9093")   # alertmanager
+BRIDGE = os.environ.get("LLM_BRIDGE_URL", "")   # set in-cluster => call the host LLM bridge
 POLL_SECONDS = 10
 
 # ---- ANSI-ish markers for legible, on-camera logging -------------------------
@@ -61,11 +62,29 @@ CLAUDE = None
 
 
 def kubectl(args, timeout=30):
-    """Run kubectl against the demo context; return (rc, stdout, stderr)."""
-    p = subprocess.run(["kubectl", "--context", KCTX] + args,
-                       capture_output=True, text=True, timeout=timeout,
+    """Run kubectl; in-cluster (KCTX empty, uses the pod's ServiceAccount) or
+    against the named context on the host. Returns (rc, stdout, stderr)."""
+    cmd = ["kubectl"] + (["--context", KCTX] if KCTX else []) + args
+    p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
                        encoding="utf-8", errors="replace")
     return p.returncode, (p.stdout or "").strip(), (p.stderr or "").strip()
+
+
+def call_model(prompt):
+    """The AI brain. In-cluster we POST to the host LLM bridge (keeps it $0 on the
+    Claude subscription); on the host we shell out to the claude CLI directly."""
+    if BRIDGE:
+        import urllib.request
+        data = json.dumps({"prompt": prompt}).encode()
+        req = urllib.request.Request(BRIDGE.rstrip("/") + "/diagnose", data=data,
+                                     headers={"Content-Type": "application/json"})
+        return json.load(urllib.request.urlopen(req, timeout=200)).get("response", "")
+    env = dict(os.environ)
+    env["PATH"] = r"C:\Program Files\Git\cmd;" + env.get("PATH", "")
+    p = subprocess.run([CLAUDE, "-p", prompt, "--permission-mode", "acceptEdits"],
+                       capture_output=True, text=True, encoding="utf-8",
+                       errors="replace", env=env, timeout=200)
+    return p.stdout.strip()
 
 
 # ---- the allow-list: the ONLY shapes of command the agent will auto-run -------
@@ -178,12 +197,7 @@ def ask_claude(alert, ns, pod, kind, name, context):
     prompt = PROMPT.format(alertname=alert.get("alertname", "?"),
                            reason=alert.get("reason", "?"), ns=ns, pod=pod,
                            kind=kind, name=name, context=context)
-    env = dict(os.environ)
-    env["PATH"] = r"C:\Program Files\Git\cmd;" + env.get("PATH", "")
-    p = subprocess.run([CLAUDE, "-p", prompt, "--permission-mode", "acceptEdits"],
-                       capture_output=True, text=True, encoding="utf-8",
-                       errors="replace", env=env, timeout=180)
-    out = p.stdout.strip()
+    out = call_model(prompt)
     m = re.search(r"\{.*\}", out, re.S)
     if not m:
         return {"root_cause": "AI returned no parseable answer", "classification": "RISKY",
@@ -268,9 +282,12 @@ def handle(alert):
 
 def main():
     global CLAUDE
-    CLAUDE = find_claude()
+    if not BRIDGE:
+        CLAUDE = find_claude()
     once = "--once" in sys.argv
-    log("::", f"night-shift agent online. context={KCTX}  alertmanager={AM}", "c")
+    brain = f"bridge {BRIDGE}" if BRIDGE else "local claude CLI"
+    where = "in-cluster" if not KCTX else KCTX
+    log("::", f"night-shift agent online. kube={where}  alertmanager={AM}  brain={brain}", "c")
     seen = {}
     while True:
         alerts = get_firing_alerts()

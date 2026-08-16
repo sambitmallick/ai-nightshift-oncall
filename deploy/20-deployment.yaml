@@ -1,0 +1,35 @@
+# The night-shift agent, running as a real in-cluster workload.
+#   - uses its ServiceAccount token (RBAC-gated) to talk to the API server
+#   - polls Alertmanager over the cluster network (no port-forward)
+#   - sends prompts to the host LLM bridge (keeps the Claude subscription $0)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nightshift-agent
+  namespace: default
+  labels: { app: nightshift-agent }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: nightshift-agent }
+  template:
+    metadata:
+      labels: { app: nightshift-agent }
+    spec:
+      serviceAccountName: nightshift-agent
+      containers:
+        - name: agent
+          # docker: nightshift-agent:demo   |   podman tags it localhost/nightshift-agent:demo
+          image: nightshift-agent:demo
+          imagePullPolicy: Never          # loaded into kind, not pulled from a registry
+          args: ["--watch"]
+          env:
+            - name: KCTX
+              value: ""                    # empty => in-cluster kubectl (ServiceAccount)
+            - name: AM_URL
+              value: "http://kps-kube-prometheus-stack-alertmanager.monitoring.svc.cluster.local:9093"
+            - name: LLM_BRIDGE_URL
+              value: "http://llm-bridge.default.svc.cluster.local:8799"
+          resources:
+            requests: { cpu: 25m, memory: 64Mi }
+            limits: { memory: 256Mi }

@@ -1,0 +1,55 @@
+# The agent's identity + a LEAST-PRIVILEGE Role. This is the second guard-rail:
+# the code allow-list decides what the agent *tries*; RBAC decides what the API
+# server will *let it do*. Even if the code guard-rail were bypassed, the agent
+# has no permission to touch secrets, PVCs, namespaces, or delete a Deployment.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nightshift-agent
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nightshift-agent
+  namespace: default
+rules:
+  # --- read, to diagnose (describe / logs / events / owning workload) ---
+  - apiGroups: [""]
+    resources: ["pods", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+  # --- the ONLY writes the allow-list needs ---
+  # patch/update a Deployment: set env, set image, set resources, rollout restart
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "patch", "update"]
+  # scale a Deployment (bounded 1..10 in the code guard-rail)
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    verbs: ["update", "patch"]
+  # delete a Pod to force a reschedule
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["delete"]
+  # NOTE what is deliberately absent: secrets, configmaps(write), persistentvolumeclaims,
+  # namespaces, nodes, and "delete" on deployments. The API server enforces it.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nightshift-agent
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: nightshift-agent
+    namespace: default
+roleRef:
+  kind: Role
+  name: nightshift-agent
+  apiGroup: rbac.authorization.k8s.io
