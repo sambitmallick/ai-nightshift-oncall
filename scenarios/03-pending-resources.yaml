@@ -1,0 +1,24 @@
+# SAFE incident: Pending / unschedulable because the memory request (900Gi) is
+# larger than any node can offer. Root cause is in the events (FailedScheduling:
+# Insufficient memory). Expected AI fix:
+#   kubectl set resources deployment/analytics-worker --requests=memory=128Mi
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-worker
+  labels: { app: analytics-worker, demo: nightshift, tier: batch }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: analytics-worker } }
+  template:
+    metadata: { labels: { app: analytics-worker } }
+    spec:
+      containers:
+        - name: worker
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args: ['echo "analytics-worker up"; sleep 3600']
+          resources:
+            requests:
+              memory: "900Gi"     # fat-fingered: meant 900Mi (or less)
+              cpu: "100m"

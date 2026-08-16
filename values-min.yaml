@@ -1,0 +1,53 @@
+# Minimal kube-prometheus-stack for a laptop kind cluster: Prometheus + Alertmanager
+# only (no Grafana), trimmed resources + short retention. Enough to fire the real
+# Kubernetes pod alerts and route them to our night-shift agent webhook.
+grafana:
+  enabled: false
+
+# we don't need the control-plane scrapers for a kind demo (they add noise/failures)
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+kubeEtcd:
+  enabled: false
+
+nodeExporter:
+  enabled: false   # pod alerts come from kube-state-metrics, not node metrics
+
+prometheusOperator:
+  resources:
+    requests: { cpu: 50m, memory: 96Mi }
+
+kube-state-metrics:
+  resources:
+    requests: { cpu: 20m, memory: 48Mi }
+
+prometheus:
+  prometheusSpec:
+    retention: 2h
+    scrapeInterval: 15s
+    evaluationInterval: 15s
+    resources:
+      requests: { cpu: 100m, memory: 300Mi }
+      limits: { memory: 800Mi }
+    # keep only rules we care about lighter footprint is fine; defaults are OK
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests: { cpu: 20m, memory: 48Mi }
+  # default receiver; the night-shift agent polls the Alertmanager API (via
+  # kubectl port-forward) for firing alerts -- reliable on kind+podman, and the
+  # alerts themselves are real Prometheus alerts either way.
+  config:
+    route:
+      receiver: 'null'
+      group_by: ['namespace', 'alertname', 'pod']
+      group_wait: 10s
+      group_interval: 30s
+      repeat_interval: 2m
+    receivers:
+      - name: 'null'

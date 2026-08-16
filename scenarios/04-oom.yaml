@@ -1,0 +1,26 @@
+# SAFE incident: OOMKilled crash loop because the memory LIMIT (64Mi) is far
+# below what the workload steadily needs (~250Mi). Root cause: last state
+# Terminated/OOMKilled, exit 137. Expected AI fix:
+#   kubectl set resources deployment/image-resizer --limits=memory=320Mi
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-resizer
+  labels: { app: image-resizer, demo: nightshift, tier: worker }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: image-resizer } }
+  template:
+    metadata: { labels: { app: image-resizer } }
+    spec:
+      containers:
+        - name: resizer
+          image: polinux/stress:latest
+          command: ["stress"]
+          # holds ~250Mi steadily (a fixed working set, not a leak)
+          args: ["--vm", "1", "--vm-bytes", "250M", "--vm-hang", "0", "--timeout", "3600s"]
+          resources:
+            limits:
+              memory: "64Mi"      # too low for a 250Mi working set -> OOMKilled
+            requests:
+              memory: "32Mi"

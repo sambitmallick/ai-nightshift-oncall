@@ -1,0 +1,10 @@
+# video production - not part of the code deliverable
+studio/
+demo/
+narration/
+thumbnail/
+capture/
+review/
+intro/
+__pycache__/
+*.pyc

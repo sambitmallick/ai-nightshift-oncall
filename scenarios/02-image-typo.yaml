@@ -1,0 +1,18 @@
+# SAFE incident: ImagePullBackOff because the image tag is a typo ("alpin" for
+# "alpine"). Root cause is in the events (manifest unknown / not found).
+# Expected AI fix: kubectl set image deployment/web-frontend web=nginx:alpine
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-frontend
+  labels: { app: web-frontend, demo: nightshift, tier: frontend }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: web-frontend } }
+  template:
+    metadata: { labels: { app: web-frontend } }
+    spec:
+      containers:
+        - name: web
+          image: nginx:alpin      # typo: should be nginx:alpine
+          ports: [{ containerPort: 80 }]

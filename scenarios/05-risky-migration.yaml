@@ -1,0 +1,22 @@
+# RISKY incident: CrashLoopBackOff from a half-applied database migration in a new
+# release. NOT a config/image/resource issue -- the app's own code fails and it
+# involves persistent schema state. The correct action is to page a human; any
+# auto "fix" (restart / rollback) could re-run the failed migration or mask the
+# half-applied change. Expected AI verdict: RISKY -> escalate, touch nothing.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-worker
+  labels: { app: orders-worker, demo: nightshift, tier: backend }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: orders-worker } }
+  template:
+    metadata: { labels: { app: orders-worker } }
+    spec:
+      containers:
+        - name: worker
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args:
+            - 'echo "orders-worker v2.4.0 starting"; echo "applying database migration 0042_add_orders_index..."; sleep 4; echo "ERROR: migration 0042 failed halfway: duplicate key value violates unique constraint orders_pkey"; echo "panic: database schema is now in an inconsistent state, manual intervention required"; exit 1'
