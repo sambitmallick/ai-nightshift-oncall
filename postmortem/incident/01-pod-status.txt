@@ -1,0 +1,2 @@
+NAME                             READY   STATUS   RESTARTS      AGE    IP            NODE                       NOMINATED NODE   READINESS GATES
+orders-worker-6bb6b69974-7l8vx   0/1     Error    3 (74s ago)   101s   10.244.0.15   nightshift-control-plane   <none>           <none>

@@ -1,0 +1,5 @@
+orders-worker v2.4.0 starting
+applying database migration 0042_add_orders_index...
+ERROR: migration 0042 failed halfway: duplicate key value violates unique constraint orders_pkey
+panic: database schema is now in an inconsistent state, manual intervention required
+unable to retrieve container logs for containerd://01eaba73d40af696490c242d9907d198250031e4e7f3c0359d787d38db4e7f61

@@ -1,0 +1,6 @@
+LAST SEEN   TYPE      REASON      OBJECT                               MESSAGE
+101s        Normal    Scheduled   pod/orders-worker-6bb6b69974-7l8vx   Successfully assigned default/orders-worker-6bb6b69974-7l8vx to nightshift-control-plane
+44s         Normal    Pulled      pod/orders-worker-6bb6b69974-7l8vx   Container image "busybox:1.36" already present on machine and can be accessed by the pod
+44s         Normal    Created     pod/orders-worker-6bb6b69974-7l8vx   Container created
+44s         Normal    Started     pod/orders-worker-6bb6b69974-7l8vx   Container started
+39s         Warning   BackOff     pod/orders-worker-6bb6b69974-7l8vx   Back-off restarting failed container worker in pod orders-worker-6bb6b69974-7l8vx_default(db6ce990-ff93-43fa-bf67-a595b0f64c6c)

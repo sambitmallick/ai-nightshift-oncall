@@ -1,0 +1,7 @@
+{
+ "alert": "PodCrashLooping",
+ "pod": "orders-worker-6bb6b69974-7l8vx",
+ "severity": "warning",
+ "startsAt": "2026-08-16T14:45:28.901Z",
+ "summary": "Pod default/orders-worker-6bb6b69974-7l8vx is in CrashLoopBackOff"
+}

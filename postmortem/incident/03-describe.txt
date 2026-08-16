@@ -1,0 +1,67 @@
+Name:             orders-worker-6bb6b69974-7l8vx
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             nightshift-control-plane/10.89.0.2
+Start Time:       Sun, 16 Aug 2026 20:13:41 +0530
+Labels:           app=orders-worker
+                  pod-template-hash=6bb6b69974
+Annotations:      <none>
+Status:           Running
+IP:               10.244.0.15
+IPs:
+  IP:           10.244.0.15
+Controlled By:  ReplicaSet/orders-worker-6bb6b69974
+Containers:
+  worker:
+    Container ID:  containerd://db3fcbaa239b36d2b94f2cbf2c59e4cb1da6b96275f03ace989cdcc548ac92b4
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /bin/sh
+      -c
+    Args:
+      echo "orders-worker v2.4.0 starting"; echo "applying database migration 0042_add_orders_index..."; sleep 4; echo "ERROR: migration 0042 failed halfway: duplicate key value violates unique constraint orders_pkey"; echo "panic: database schema is now in an inconsistent state, manual intervention required"; exit 1
+    State:          Terminated
+      Reason:       Error
+      Exit Code:    1
+      Started:      Sun, 16 Aug 2026 20:14:38 +0530
+      Finished:     Sun, 16 Aug 2026 20:14:42 +0530
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    1
+      Started:      Sun, 16 Aug 2026 20:14:04 +0530
+      Finished:     Sun, 16 Aug 2026 20:14:08 +0530
+    Ready:          False
+    Restart Count:  3
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-cd5fw (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       False 
+  ContainersReady             False 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-cd5fw:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                 From               Message
+  ----     ------     ----                ----               -------
+  Normal   Scheduled  102s                default-scheduler  Successfully assigned default/orders-worker-6bb6b69974-7l8vx to nightshift-control-plane
+  Normal   Pulled     45s (x4 over 102s)  kubelet            spec.containers{worker}: Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Normal   Created    45s (x4 over 102s)  kubelet            spec.containers{worker}: Container created
+  Normal   Started    45s (x4 over 102s)  kubelet            spec.containers{worker}: Container started
+  Warning  BackOff    40s (x3 over 92s)   kubelet            spec.containers{worker}: Back-off restarting failed container worker in pod orders-worker-6bb6b69974-7l8vx_default(db6ce990-ff93-43fa-bf67-a595b0f64c6c)

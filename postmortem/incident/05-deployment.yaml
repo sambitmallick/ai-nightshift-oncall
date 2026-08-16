@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"orders-worker","demo":"nightshift","tier":"backend"},"name":"orders-worker","namespace":"default"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"orders-worker"}},"template":{"metadata":{"labels":{"app":"orders-worker"}},"spec":{"containers":[{"args":["echo \"orders-worker v2.4.0 starting\"; echo \"applying database migration 0042_add_orders_index...\"; sleep 4; echo \"ERROR: migration 0042 failed halfway: duplicate key value violates unique constraint orders_pkey\"; echo \"panic: database schema is now in an inconsistent state, manual intervention required\"; exit 1"],"command":["/bin/sh","-c"],"image":"busybox:1.36","name":"worker"}]}}}}
+  creationTimestamp: "2026-08-16T14:43:41Z"
+  generation: 1
+  labels:
+    app: orders-worker
+    demo: nightshift
+    tier: backend
+  name: orders-worker
+  namespace: default
+  resourceVersion: "10353"
+  uid: a23577e8-d3b0-40bb-8da2-c1e4efc6b814
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: orders-worker
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: orders-worker
+    spec:
+      containers:
+      - args:
+        - 'echo "orders-worker v2.4.0 starting"; echo "applying database migration
+          0042_add_orders_index..."; sleep 4; echo "ERROR: migration 0042 failed halfway:
+          duplicate key value violates unique constraint orders_pkey"; echo "panic:
+          database schema is now in an inconsistent state, manual intervention required";
+          exit 1'
+        command:
+        - /bin/sh
+        - -c
+        image: busybox:1.36
+        imagePullPolicy: IfNotPresent
+        name: worker
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status:
+  conditions:
+  - lastTransitionTime: "2026-08-16T14:43:41Z"
+    lastUpdateTime: "2026-08-16T14:43:42Z"
+    message: ReplicaSet "orders-worker-6bb6b69974" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  - lastTransitionTime: "2026-08-16T14:44:43Z"
+    lastUpdateTime: "2026-08-16T14:44:43Z"
+    message: Deployment does not have minimum availability.
+    reason: MinimumReplicasUnavailable
+    status: "False"
+    type: Available
+  observedGeneration: 1
+  replicas: 1
+  terminatingReplicas: 0
+  unavailableReplicas: 1
+  updatedReplicas: 1
