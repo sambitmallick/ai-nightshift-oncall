@@ -1,0 +1,8 @@
+{
+  "new_mem_request": "480Mi",
+  "new_mem_limit": "640Mi",
+  "mem_reclaimed_per_replica_mib": 32,
+  "replica_note": "Keep 2 replicas - CPU is negligible but 2 is the minimum for availability, and consolidating to 1 would concentrate the ~450Mi cart-cache working set and remove failure headroom.",
+  "reasoning": "The month shows daily evening peaks of 400-494Mi (p99=466, max=494.5), so the 512Mi request is only modestly padded - dropping it to 480Mi still covers p99 with margin while only 4 of 30 daily peaks briefly exceed it, an acceptable burst above request. The real spare capacity is in the limit: 768Mi is 273Mi above the worst observed peak, so 640Mi retains ~30% headroom over the 30-day max with zero restarts or evictions in the window. Cutting the request below ~450Mi (e.g. toward p50) would put the pod above its request for hours every evening and is not justified by this data.",
+  "headline": "30 days of data lets us trim checkout-service memory from 512Mi/768Mi to 480Mi/640Mi per replica, reclaiming reserved capacity while keeping 30% headroom over the worst peak observed all month."
+}

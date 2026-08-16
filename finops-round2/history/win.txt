@@ -1,0 +1,10 @@
+NAME                                READY   STATUS    RESTARTS   AGE
+checkout-service-79dc44bb97-52gpk   1/1     Running   0          80s
+checkout-service-79dc44bb97-bbvff   1/1     Running   0          80s
+--- restarts (should be 0) ---
+checkout-service-79dc44bb97-52gpk ready=true restarts=0
+checkout-service-79dc44bb97-bbvff ready=true restarts=0
+=== win usage (should be ~495Mi under the 640 limit) ===
+NAME                                CPU(cores)   MEMORY(bytes)   
+checkout-service-79dc44bb97-52gpk   0m           496Mi           
+checkout-service-79dc44bb97-bbvff   0m           496Mi           

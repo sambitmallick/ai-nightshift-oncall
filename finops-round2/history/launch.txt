@@ -1,0 +1,7 @@
+=== LAUNCH day: checkout at AI's 640Mi ceiling, launch working set ~720Mi ===
+NAME                                READY   STATUS      RESTARTS      AGE
+checkout-service-795cfd5666-r2xkq   0/1     OOMKilled   3 (69s ago)   90s
+checkout-service-795cfd5666-zkjp6   0/1     OOMKilled   3 (71s ago)   90s
+--- last state ---
+checkout-service-795cfd5666-r2xkq: OOMKilled exit=137 restarts=3
+checkout-service-795cfd5666-zkjp6: OOMKilled exit=137 restarts=3

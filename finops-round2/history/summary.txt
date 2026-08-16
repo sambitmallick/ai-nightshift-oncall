@@ -1,0 +1,16 @@
+checkout-service  -  memory working set, last 30 days (Prometheus)
+replicas: 2/2 healthy for the entire window (0 restarts, 0 evictions)
+current config: memory request 512Mi, limit 768Mi, per replica
+
+Per-replica memory percentiles across the whole month (MiB):
+  p50=235.3   p90=415.8   p95=442.1   p99=465.9   max=494.5
+
+CPU: p99 ~ 22 millicores per replica (negligible).
+
+Daily peak per-replica memory (MiB), day 1 -> 30:
+    447    457    460    476    483    414    424    447    452    450
+    458    494    407    413    458    457    448    462    491    410
+    406    451    456    462    469    481    400    419    462    460
+
+Pattern: quiet overnight (~150Mi), consistent evening peak (~450Mi as the
+cart cache fills), Fridays slightly hotter. Stable and predictable all month.
