@@ -1,0 +1,7 @@
+=== checkout at PEAK: AI capped mem limit at 384Mi, peak working set ~450Mi ===
+NAME                                READY   STATUS      RESTARTS      AGE
+checkout-service-5f7ccdf87d-gvmrb   0/1     OOMKilled   3 (59s ago)   75s
+checkout-service-5f7ccdf87d-lbkwv   0/1     OOMKilled   3 (61s ago)   75s
+--- last terminated state ---
+checkout-service-5f7ccdf87d-gvmrb: OOMKilled exit=137
+checkout-service-5f7ccdf87d-lbkwv: OOMKilled exit=137

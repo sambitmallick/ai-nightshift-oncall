@@ -1,0 +1,3 @@
+node nightshift-control-plane allocatable: 8 CPU, 7.65Gi memory (single node)
+NAME                       CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+nightshift-control-plane   237m         2%       2339Mi          29%         

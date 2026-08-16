@@ -1,0 +1,95 @@
+# FinOps demo workloads. Each holds a realistic amount of memory (a blob in a
+# memory-backed volume -> shows up in `kubectl top`, low CPU). Requests/limits are
+# what the teams asked for; actual usage is much lower right now (off-peak).
+#
+# 3 of these are genuinely over-provisioned (real savings). ONE is not:
+# checkout-service's 3 replicas are for failover, and its 512Mi holds the peak-hour
+# cart cache - both look identical to "waste" in the spec at off-peak.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout-service
+  labels: { app: checkout-service, team: payments, demo: finops }
+spec:
+  replicas: 3                       # TRAP: failover, not waste
+  selector: { matchLabels: { app: checkout-service } }
+  template:
+    metadata: { labels: { app: checkout-service } }
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args: ['dd if=/dev/zero of=/data/blob bs=1M count=160 2>/dev/null; echo "checkout-service up, holding 160Mi"; sleep 36000']
+          resources:
+            requests: { memory: "512Mi", cpu: "300m" }   # TRAP: 512Mi = peak headroom
+            limits: { memory: "512Mi" }
+          volumeMounts: [{ name: mem, mountPath: /data }]
+      volumes: [{ name: mem, emptyDir: { medium: Memory } }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-worker
+  labels: { app: analytics-worker, team: data, demo: finops }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: analytics-worker } }
+  template:
+    metadata: { labels: { app: analytics-worker } }
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args: ['dd if=/dev/zero of=/data/blob bs=1M count=185 2>/dev/null; echo "analytics-worker up, holding 185Mi"; sleep 36000']
+          resources:
+            requests: { memory: "2Gi", cpu: "500m" }      # genuinely over-provisioned
+            limits: { memory: "2Gi" }
+          volumeMounts: [{ name: mem, mountPath: /data }]
+      volumes: [{ name: mem, emptyDir: { medium: Memory } }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-thumbnailer
+  labels: { app: image-thumbnailer, team: media, demo: finops }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: image-thumbnailer } }
+  template:
+    metadata: { labels: { app: image-thumbnailer } }
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args: ['dd if=/dev/zero of=/data/blob bs=1M count=120 2>/dev/null; echo "image-thumbnailer up, holding 120Mi"; sleep 36000']
+          resources:
+            requests: { memory: "1Gi", cpu: "250m" }       # genuinely over-provisioned
+            limits: { memory: "1Gi" }
+          volumeMounts: [{ name: mem, mountPath: /data }]
+      volumes: [{ name: mem, emptyDir: { medium: Memory } }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-sender
+  labels: { app: notification-sender, team: growth, demo: finops }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: notification-sender } }
+  template:
+    metadata: { labels: { app: notification-sender } }
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args: ['dd if=/dev/zero of=/data/blob bs=1M count=90 2>/dev/null; echo "notification-sender up, holding 90Mi"; sleep 36000']
+          resources:
+            requests: { memory: "768Mi", cpu: "200m" }     # genuinely over-provisioned
+            limits: { memory: "768Mi" }
+          volumeMounts: [{ name: mem, mountPath: /data }]
+      volumes: [{ name: mem, emptyDir: { medium: Memory } }]

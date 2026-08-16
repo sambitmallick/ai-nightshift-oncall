@@ -1,0 +1,11 @@
+=== whole cluster after the AI's rightsizing was applied + peak arrived ===
+NAME                                   READY   STATUS      RESTARTS      AGE     IP            NODE                       NOMINATED NODE   READINESS GATES
+analytics-worker-f9cb885d8-nr8fw       1/1     Running     0             9m29s   10.244.0.27   nightshift-control-plane   <none>           <none>
+checkout-service-5f7ccdf87d-gvmrb      0/1     OOMKilled   4 (67s ago)   111s    10.244.0.34   nightshift-control-plane   <none>           <none>
+checkout-service-5f7ccdf87d-lbkwv      0/1     OOMKilled   4 (75s ago)   111s    10.244.0.33   nightshift-control-plane   <none>           <none>
+image-thumbnailer-545d4b9d8b-7vl7w     1/1     Running     0             9m28s   10.244.0.28   nightshift-control-plane   <none>           <none>
+notification-sender-74d47564db-l4tdp   1/1     Running     0             9m27s   10.244.0.25   nightshift-control-plane   <none>           <none>
+
+=== the OOM event on checkout ===
+27s         Normal    Started     pod/checkout-service-5f7ccdf87d-gvmrb   Container started
+26s         Warning   BackOff     pod/checkout-service-5f7ccdf87d-gvmrb   Back-off restarting failed container app in pod checkout-service-5f7ccdf87d-gvmrb_default(49ec4888-f8a5-4a28-a938-bfa639373e99)

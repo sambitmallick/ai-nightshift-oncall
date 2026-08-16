@@ -1,0 +1,7 @@
+analytics-worker-5cbf59fdfb-vlkzm     0m    185Mi   
+checkout-service-fc4ffd6d8-cwrww      0m    160Mi   
+checkout-service-fc4ffd6d8-mlpqj      0m    160Mi   
+checkout-service-fc4ffd6d8-xmt7m      0m    160Mi   
+image-thumbnailer-55b6f9d5c8-qj8ks    0m    120Mi   
+image-thumbnailer-55b6f9d5c8-znv22    0m    120Mi   
+notification-sender-d966b497b-ltdw7   0m    90Mi    

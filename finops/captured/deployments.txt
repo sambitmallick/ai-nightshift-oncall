@@ -1,0 +1,5 @@
+DEPLOYMENT             REPLICAS  MEM_REQ    MEM_LIM    CPU_REQ   
+checkout-service       3         512Mi      512Mi      300m      
+analytics-worker       1         2Gi        2Gi        500m      
+image-thumbnailer      2         1Gi        1Gi        250m      
+notification-sender    1         768Mi      768Mi      200m      

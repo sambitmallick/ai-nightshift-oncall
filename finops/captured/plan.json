@@ -1,0 +1,42 @@
+{
+  "workloads": [
+    {
+      "name": "checkout-service",
+      "new_mem_request": "256Mi",
+      "new_mem_limit": "384Mi",
+      "new_cpu_request": "50m",
+      "new_replicas": 2,
+      "mem_reclaimed_mib": 1024,
+      "reason": "Each pod uses only 160Mi of its 512Mi request and 0m CPU; 256Mi gives ~60% headroom and 2 replicas still provide HA for the user-facing path."
+    },
+    {
+      "name": "analytics-worker",
+      "new_mem_request": "256Mi",
+      "new_mem_limit": "512Mi",
+      "new_cpu_request": "100m",
+      "new_replicas": 1,
+      "mem_reclaimed_mib": 1792,
+      "reason": "Using 185Mi of a 2Gi request (9% utilization); 256Mi request with a 512Mi burst limit covers batch spikes while reclaiming 1.75Gi."
+    },
+    {
+      "name": "image-thumbnailer",
+      "new_mem_request": "256Mi",
+      "new_mem_limit": "512Mi",
+      "new_cpu_request": "100m",
+      "new_replicas": 1,
+      "mem_reclaimed_mib": 1792,
+      "reason": "Both replicas idle at 120Mi/0m against 1Gi requests; one 256Mi pod with a 512Mi limit for large-image spikes handles this async queue workload."
+    },
+    {
+      "name": "notification-sender",
+      "new_mem_request": "128Mi",
+      "new_mem_limit": "256Mi",
+      "new_cpu_request": "50m",
+      "new_replicas": 1,
+      "mem_reclaimed_mib": 640,
+      "reason": "Uses 90Mi of 768Mi (12% utilization); 128Mi request with 256Mi limit is ample for a low-volume sender."
+    }
+  ],
+  "total_mem_reclaimed_mib": 5248,
+  "headline": "Right-sizing reclaims 5.1 of 6.25 GiB reserved memory (82%), cutting the cluster's memory reservation from 6400Mi to 1152Mi with headroom intact."
+}

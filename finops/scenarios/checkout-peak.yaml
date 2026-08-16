@@ -1,0 +1,23 @@
+# checkout-service at the evening PEAK, with the AI's rightsizing applied.
+# The cart cache grows to its normal peak (~450Mi) -- but the AI capped the limit
+# at 384Mi and cut failover from 3 replicas to 2. Result: OOMKilled at peak.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout-service
+  labels: { app: checkout-service, team: payments, demo: finops }
+spec:
+  replicas: 2                        # AI cut this from 3 (failover margin gone)
+  selector: { matchLabels: { app: checkout-service } }
+  template:
+    metadata: { labels: { app: checkout-service } }
+    spec:
+      containers:
+        - name: app
+          image: polinux/stress:latest
+          command: ["stress"]
+          # peak cart cache: the working set grows to ~450Mi
+          args: ["--vm", "1", "--vm-bytes", "450M", "--vm-hang", "0", "--timeout", "36000s"]
+          resources:
+            requests: { memory: "256Mi", cpu: "50m" }
+            limits: { memory: "384Mi" }         # AI's cut -- peak needs ~450Mi -> OOMKilled

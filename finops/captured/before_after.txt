@@ -1,0 +1,9 @@
+=== BEFORE: reserved memory ===
+  checkout 3x512=1536  analytics 2048  image 2x1024=2048  notification 768  = 6400Mi (~6.25Gi)
+=== AFTER: all still running at off-peak? (the apparent win) ===
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
+analytics-worker      1/1     1            1           4m55s
+checkout-service      2/2     2            2           4m55s
+image-thumbnailer     1/1     1            1           4m55s
+notification-sender   1/1     1            1           4m55s
+  reserved memory now: 2x256 + 256 + 256 + 128 = 1152Mi (~1.1Gi) -> saved ~5.1Gi (82%)
