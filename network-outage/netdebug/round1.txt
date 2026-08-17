@@ -1,0 +1,8 @@
+1) **Root cause:** The Service's selector (`app=web`) doesn't match the pods' labels (`app=web-backend`), so the Service has zero endpoints and connections are refused.
+
+2) **Fix:**
+```
+kubectl patch svc web -p '{"spec":{"selector":{"app":"web-backend"}}}'
+```
+
+Verify with `kubectl get endpoints web` — the two pod IPs should appear within seconds. (Note: the pods also carry `pod-template-hash`, but selecting on `app: web-backend` alone is correct — don't include the hash or you'll break on the next rollout.)

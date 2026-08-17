@@ -1,0 +1,15 @@
+# ACT 1 fault (control-plane, legible): the Service selector is "app: web", but the
+# pods are labelled "app: web-backend". Result: the Service selects NOTHING ->
+# zero endpoints -> total outage. This is the single most common k8s networking bug,
+# and it's fully visible to `kubectl get endpoints`. The AI nails it in seconds.
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels: { app: web-backend }
+spec:
+  selector:
+    app: web            # TYPO: should be web-backend
+  ports:
+    - port: 80
+      targetPort: 80

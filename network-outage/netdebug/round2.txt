@@ -1,0 +1,22 @@
+**1) Leading hypothesis — MTU / path-MTU blackhole in the pod network. Confidence: ~85%.**
+
+The fingerprint is exact: the TCP handshake and HTTP headers arrive (client saw `HTTP 200`, then `0 bytes` — headers are a small packet), but the body hangs. Small responses fit in small packets and pass; a 1MB body gets sent as full-MTU segments, and those are silently dropped somewhere between the pod's veth and the client — classically because the CNI's overlay interface (VXLAN/IPIP/WireGuard adds 20–60 bytes of encap) has an MTU larger than the underlay can carry, and the ICMP "fragmentation needed" that would trigger PMTU discovery is blackholed. nginx thinks it served `200 1048576` because it wrote to the socket buffer; the kernel retransmits into the void. Every Kubernetes object looks healthy because the objects *are* healthy — this is below Kubernetes, in the dataplane. (Secondary suspect, same layer: the known VXLAN TX checksum-offload kernel bug — but that one is usually less cleanly size-dependent.)
+
+**2) Next command — binary-search the size threshold from the client pod. Yes, I can run this with kubectl exec:**
+
+```
+kubectl exec <client-pod> -- sh -c \
+  'for n in 1000 1300 1350 1400 1420 1450 1500; do
+     curl -so /dev/null --max-time 3 -r 0-$n -w "$n: rc=%{http_code} got=%{size_download}\n" http://web/large.bin
+   done'
+```
+
+If responses succeed up to a sharp cutoff (typically just under ~1450–1480, i.e., 1500 minus encap overhead) and hang above it, that's the smoking gun. Pair it with `kubectl exec <pod> -- cat /sys/class/net/eth0/mtu` on both client and backend — if the pod interface claims 1500 but only ~1450 bytes actually pass, MTU mismatch is confirmed. I can also *read* the CNI's configured MTU via its ConfigMap (`kubectl -n kube-system get cm kube-flannel-cfg -o yaml`, or Calico's equivalent).
+
+**What I honestly can't do from here:** tcpdump on the node, `ethtool` the node NICs, check the underlay/node interface MTU, or see ICMP being dropped in transit. The exec-based threshold test is strong circumstantial proof, but node-level packet capture would be the definitive confirmation, and I don't have it.
+
+**3) Fix — align the MTUs; this needs cluster-admin/node access, not my read-only kubectl:**
+
+- Set the CNI MTU to underlay MTU minus encap overhead (VXLAN: −50, e.g. `1450` on a 1500 underlay; IPIP: −20; WireGuard: −60) in the CNI config (flannel ConfigMap / Calico `FelixConfiguration` or IPPool), then restart the CNI DaemonSet **and recreate the workload pods** so their veths pick up the new MTU — existing pods keep the old value.
+- Interim mitigation if config can't change immediately: TCP MSS clamping on the nodes (`iptables -t mangle ... --clamp-mss-to-pmtu`), which Calico can also do via `felixConfiguration`.
+- If the threshold test *doesn't* show a clean cutoff, pivot to the checksum-offload bug: `ethtool -K <vxlan-if> tx-checksum-ip-generic off` on the nodes.

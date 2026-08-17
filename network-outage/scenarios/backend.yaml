@@ -1,0 +1,26 @@
+# web-backend: an nginx serving a TINY response at "/" (a few bytes) and a 1MB
+# file at "/large.bin". The size split is what makes the data-plane fault legible:
+# small requests sail through; large responses hit the fault.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-backend
+  labels: { app: web-backend, team: platform }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: web-backend } }
+  template:
+    metadata: { labels: { app: web-backend } }
+    spec:
+      initContainers:
+        - name: gen
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args: ['printf "ok\n" > /html/index.html; dd if=/dev/zero of=/html/large.bin bs=1M count=1 2>/dev/null; echo generated']
+          volumeMounts: [{ name: html, mountPath: /html }]
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports: [{ containerPort: 80 }]
+          volumeMounts: [{ name: html, mountPath: /usr/share/nginx/html }]
+      volumes: [{ name: html, emptyDir: {} }]

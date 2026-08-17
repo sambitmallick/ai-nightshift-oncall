@@ -1,0 +1,13 @@
+# ACT 1 fix: correct the selector to match the pod labels. Endpoints populate,
+# and small requests start working again. (But the data-plane fault remains.)
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels: { app: web-backend }
+spec:
+  selector:
+    app: web-backend    # fixed
+  ports:
+    - port: 80
+      targetPort: 80
