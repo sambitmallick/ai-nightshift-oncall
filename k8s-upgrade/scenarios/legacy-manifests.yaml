@@ -1,0 +1,53 @@
+# Legacy manifests written for an old cluster. Every API here was REMOVED on the way
+# to 1.33, so none of it applies anymore - the upgrade is the forcing function to
+# migrate. This is the batch we hand the AI to modernise.
+#
+# The Ingress is the one that matters: extensions/v1beta1 had NO pathType field, so
+# the routing intent (was /api a prefix or exact match?) is simply not in the file.
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: app-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - host: app.local
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: web-svc
+              servicePort: 80
+          - path: /api
+            backend:
+              serviceName: api-svc
+              servicePort: 80
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: web-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: web-echo
+---
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web-echo
+  minReplicas: 1
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 50

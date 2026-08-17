@@ -1,0 +1,8 @@
+I chose `ImplementationSpecific` for both paths, and the honest reason is that the old manifest gave me nothing to go on: `extensions/v1beta1` had no `pathType` field, so the original matching semantics were never declared — they were whatever the ingress controller (nginx here) did by default.
+
+Given that, `ImplementationSpecific` is the fidelity-preserving choice:
+
+- It delegates matching back to the controller via the IngressClass, which is exactly the implicit contract the v1beta1 manifest had. This is also what Kubernetes' own API-server conversion did when serving v1beta1 objects as v1.
+- Choosing `Prefix` would have been a guess about intent, and it's not a perfectly safe one. Kubernetes `Prefix` matches on path-element boundaries, so `/api` would match `/api` and `/api/v1` but **not** `/apifoo` — whereas nginx's legacy string-prefix behavior matches `/apifoo` too. If anything depended on that edge case, `Prefix` would silently change routing.
+
+The trade-off to be aware of: `ImplementationSpecific` is non-portable — its behavior is defined by the controller, so moving this Ingress to a different controller could change routing. If you can confirm nothing relies on nginx's loose string-prefix edge cases (`/apifoo`-style matches), switching both paths to `Prefix` would be the more explicit, portable declaration of what was almost certainly intended. But absent that confirmation, I didn't want the migration to encode an assumption the original manifest never made.
